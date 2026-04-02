@@ -1,8 +1,14 @@
 #include <iostream>
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <string>
+#include "game.h"
 
 using namespace std;
+
+static const char* kFontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+static constexpr int kWindowWidth = 1000;
+static constexpr int kWindowHeight = 800;
 
 int error(const string &s){
     cerr << s << SDL_GetError() << endl;
@@ -11,6 +17,7 @@ int error(const string &s){
 
 int init(SDL_Window* &window,SDL_Renderer* &renderer,int width,int height){
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) return error("SDL could not initialize! SDL_Error: ");
+    if (TTF_Init() == -1) return error("SDL_ttf could not initialize! SDL_Error: ");
     window = SDL_CreateWindow("Music Guessing Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
     if (window == NULL) return error("Window could not be created! SDL_Error:");
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -21,35 +28,27 @@ int init(SDL_Window* &window,SDL_Renderer* &renderer,int width,int height){
 void cleanup(SDL_Window* &window,SDL_Renderer* &renderer){
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    TTF_Quit();
     SDL_Quit();
 }
 
 int screen(int argc, char* args[])
 {
-    cout << "Arg 0 " << args[0]<< endl;
-    cout << "Arg 1 " << args[1]<< endl;
     SDL_Window* window = NULL;
     SDL_Renderer* renderer = NULL;
-    int retval=init(window,renderer,1000,800);
-    if (retval!=0) return retval;
-    
-    bool quit = false;
+    int retval = init(window, renderer, kWindowWidth, kWindowHeight);
+    if (retval != 0) return retval;
 
-    SDL_Event e;
-
-    while (!quit) {
-
-        while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT)  quit = true;
-        }
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-        SDL_RenderPresent(renderer);
-        SDL_Delay(1000/240);
-        
+    TTF_Font* font = TTF_OpenFont(kFontPath, 28);
+    if (font == NULL) {
+        cleanup(window, renderer);
+        cerr << "Failed to load font: " << kFontPath << " " << TTF_GetError() << endl;
+        return -1;
     }
-    cleanup(window,renderer);
+
+    retval = runGame(renderer, font, kWindowWidth, kWindowHeight);
+    TTF_CloseFont(font);
+    cleanup(window, renderer);
     
-    return 0;
+    return retval;
 }

@@ -1,8 +1,8 @@
 PROJ=main
-SRCS=main.cpp screen.cpp
+SRCS=main.cpp screen.cpp game.cpp levels.cpp
 OBJS=$(SRCS:.cpp=.o)
 FLAGS=$(shell sdl2-config --cflags)
-LIBS=$(shell sdl2-config --libs)
+LIBS=$(shell sdl2-config --libs) -lSDL2_mixer
 TTF_LIBS=-lSDL2_ttf
 
 run: ${PROJ}.exe

@@ -1,5 +1,10 @@
-#include <string>
+#pragma once
+
 #include <SDL.h>
+#include <string>
+
+struct _TTF_Font;
+typedef struct _TTF_Font TTF_Font;
 
 int error(const std::string &s);
 
