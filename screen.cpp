@@ -7,8 +7,8 @@
 using namespace std;
 
 static const char* kFontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-static constexpr int kWindowWidth = 1000;
-static constexpr int kWindowHeight = 800;
+static constexpr int kWindowWidth = 1280;
+static constexpr int kWindowHeight = 960;
 
 int error(const string &s){
     cerr << s << SDL_GetError() << endl;

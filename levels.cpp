@@ -14,6 +14,7 @@ Level::Level(string level)
     _lyricIndex = 0;
     _rhythmIndex = 0;
     _engineInitialized = false;
+    _radioOn = false;
 }
 
 Level::~Level()
@@ -28,6 +29,11 @@ Level::~Level()
 string Level::getLevel()
 {
     return _level;
+}
+
+bool Level::isRadioOn() const
+{
+    return _radioOn;
 }
 
 string Level::trim(string s)
@@ -166,16 +172,19 @@ int Level::rhythm(string& prompt, string& answer)
     _engineInitialized = true;
 
     if (ma_engine_play_sound(&_engine, fileName.c_str(), NULL) != MA_SUCCESS) {
+        _radioOn = false;
         prompt = "Failed to play " + fileName;
         return 1;
     }
 
+    _radioOn = true;
     prompt = "Playing rhythm clip. Enter song title:";
     return 0;
 }
 
 void Level::stopAudio()
 {
+    _radioOn = false;
     if (_engineInitialized) {
         ma_engine_stop(&_engine);
     }

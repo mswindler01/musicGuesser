@@ -12,6 +12,7 @@ class Level
         size_t _rhythmIndex;
         ma_engine _engine;
         bool _engineInitialized;
+        bool _radioOn;
 
     protected:
         bool Digits(std::string s);
@@ -21,6 +22,7 @@ class Level
         Level(std::string level = "");
         ~Level();
         std::string getLevel();
+        bool isRadioOn() const;
 
         int lyrics(std::string& prompt, std::string& answer);
         void melody();
