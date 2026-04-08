@@ -136,10 +136,16 @@ static void beginRound(GameData& game, const string& nextMode)
             game.quit = true;
             return;
         }
-    } else {
+    } else if (game.mode == "rhythm") {
         if (game.level.rhythm(prompt, game.currentAnswer) != 0) {
             pushMessage(game.messages, prompt);
             game.quit = true;
+            return;
+        }
+    }else if(game.mode == "melody"){
+        if(game.level.melody(prompt, game.currentAnswer) != 0){
+            pushMessage(game.messages, prompt);
+            game.quit= true;
             return;
         }
     }
@@ -161,11 +167,11 @@ static void submitInput(GameData& game, const string& rawInput)
 
     if (game.state == AppState::ChooseMode) {
         string normalized = lowerCopy(value);
-        if (normalized == "lyrics" || normalized == "rhythm") {
+        if (normalized == "lyrics" || normalized == "rhythm"|| normalized == "melody") {
             beginRound(game, normalized);
         } else {
             pushMessage(game.messages, "Invalid type");
-            pushMessage(game.messages, "Would you like to guess by the lyrics or the rhythm?");
+            pushMessage(game.messages, "Would you like to guess by the lyrics, the rhythm or melody?");
         }
         return;
     }
@@ -184,7 +190,7 @@ static void submitInput(GameData& game, const string& rawInput)
 
     string normalized = lowerCopy(value);
     if (normalized == "y") {
-        pushMessage(game.messages, "Would you like to guess by the lyrics or the rhythm?");
+        pushMessage(game.messages, "Would you like to guess by the lyrics, the rhythm or the melody?");
         game.state = AppState::ChooseMode;
     } else if (normalized == "n") {
         game.quit = true;
@@ -239,7 +245,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     Uint32 lastRadioTick = SDL_GetTicks();
 
     pushMessage(game.messages, "Hello! Welcome to my music guessing game.");
-    pushMessage(game.messages, "Would you like to guess by the lyrics or the rhythm?");
+    pushMessage(game.messages, "Would you like to guess by the lyrics, the rhythm or the melody?");
 
     SDL_Event e;
     SDL_StartTextInput();

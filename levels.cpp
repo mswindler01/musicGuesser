@@ -8,12 +8,19 @@
 
 using namespace std;
 
+namespace {
+const char* kAnswersDir = "resources/answers/";
+const char* kMusicDir = "resources/music/";
+}
+
 Level::Level(string level)
 {
     _level = level;
     _lyricIndex = 0;
     _rhythmIndex = 0;
+    _melodyIndex =0;
     _engineInitialized = false;
+    _soundInitialized = false;
     _radioOn = false;
 }
 
@@ -62,7 +69,7 @@ bool Level::Digits(string s)
 
 int Level::lyrics(string& prompt, string& answer)
 {
-    ifstream lyricsFile("lyrics.txt");
+    ifstream lyricsFile(string(kAnswersDir) + "lyrics.txt");
     vector<pair<string, string>> lyricsAndAnswers;
     string line;
 
@@ -94,7 +101,7 @@ int Level::lyrics(string& prompt, string& answer)
         lyricsFile.close();
 
         if (lyricsAndAnswers.empty()) {
-            prompt = "Error: lyrics.txt has no valid lyric entries";
+            prompt = "Error: resources/answers/lyrics.txt has no valid lyric entries";
             return 1;
         }
 
@@ -105,22 +112,93 @@ int Level::lyrics(string& prompt, string& answer)
         return 0;
     }
 
-    prompt = "Error: lyrics.txt could not be opened";
+    prompt = "Error: resources/answers/lyrics.txt could not be opened";
     return 1;
 }
 
-void Level::melody()
+int Level::melody(string& prompt, string& answer)
 {
+    ifstream melodyFile(string(kAnswersDir) + "melody.txt");
+    vector<pair<string,string>> songs;
+    string line;
+
+    if (!melodyFile.is_open()){
+        prompt = "Error: resources/answers/melody.txt could not be open";
+        return 1;
+
+    }
+    while (getline(melodyFile, line)) {
+        string entry = trim(line);
+        if (entry.empty()) continue;
+
+        size_t dotPos= entry.find('.');
+        string content = entry;
+        
+        if (dotPos != string:: npos){
+            string idText = trim(entry.substr(0,dotPos));
+            if(!Digits(idText)) continue;
+
+            content =trim(entry.substr(dotPos +1));
+        
+        }
+
+        size_t semicolonPos = content.find(';');
+        if (semicolonPos == string :: npos) continue;
+
+        string fileText =trim (content.substr(0,semicolonPos));
+        string answerText = trim(content.substr(semicolonPos+1));
+
+        if (fileText.empty() || answerText.empty()) continue;
+        songs.push_back({fileText, answerText});
+    }
+    melodyFile.close();
+
+    if(songs.empty()){
+        prompt = "Error: resources/answers/melody.txt has no valid entries";
+        return 1;
+    }
+
+    const size_t index = _melodyIndex % songs.size();
+    ++_melodyIndex;
+
+    string fileName = string(kMusicDir) + songs[index].first;
+    answer =songs[index].second;
+
+    stopAudio();
+
+    if (!_engineInitialized){
+        if (ma_engine_init(NULL, &_engine) != MA_SUCCESS) {
+        prompt = "Failed to init audio engine";
+        return 1;
+        }
+
+    _engineInitialized = true;
+    }
+
+
+
+    if (ma_sound_init_from_file(&_engine, fileName.c_str(), 0, NULL, NULL, &_sound) != MA_SUCCESS) {
+    prompt = "Failed to load " + fileName;
+    return 1;
+    }
+
+    ma_sound_start(&_sound);
+    _soundInitialized  = true;
+    _radioOn = true;
+    prompt = "Playing melody clip. Enter song title:";
+    return 0;
 }
+
+    
 
 int Level::rhythm(string& prompt, string& answer)
 {
-    ifstream rhythmFile("rhythm.txt");
+    ifstream rhythmFile(string(kAnswersDir) + "rhythm.txt");
     vector<pair<string, string>> songs;
     string line;
 
     if (!rhythmFile.is_open()) {
-        prompt = "Error: rhythm.txt could not be opened";
+        prompt = "Error: resources/answers/rhythm.txt could not be opened";
         return 1;
     }
 
@@ -154,13 +232,13 @@ int Level::rhythm(string& prompt, string& answer)
     rhythmFile.close();
 
     if (songs.empty()) {
-        prompt = "Error: rhythm.txt has no valid song entries";
+        prompt = "Error: resources/answers/rhythm.txt has no valid song entries";
         return 1;
     }
 
     const size_t index = _rhythmIndex % songs.size();
     ++_rhythmIndex;
-    const string fileName = songs[index].first;
+    const string fileName = string(kMusicDir) + songs[index].first;
     answer = songs[index].second;
 
     stopAudio();
@@ -171,12 +249,14 @@ int Level::rhythm(string& prompt, string& answer)
     }
     _engineInitialized = true;
 
-    if (ma_engine_play_sound(&_engine, fileName.c_str(), NULL) != MA_SUCCESS) {
+    if (ma_sound_init_from_file(&_engine, fileName.c_str(),0,NULL, NULL, &_sound) != MA_SUCCESS) {
         _radioOn = false;
         prompt = "Failed to play " + fileName;
         return 1;
     }
 
+    ma_sound_start(&_sound);
+    _soundInitialized = true;
     _radioOn = true;
     prompt = "Playing rhythm clip. Enter song title:";
     return 0;
@@ -186,6 +266,12 @@ void Level::stopAudio()
 {
     _radioOn = false;
     if (_engineInitialized) {
-        ma_engine_stop(&_engine);
+       // ma_engine_stop(&_engine);
+    }
+
+    if(_soundInitialized ){
+        ma_sound_stop(&_sound);
+        ma_sound_uninit(&_sound);
+        _soundInitialized = false;
     }
 }

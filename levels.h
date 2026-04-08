@@ -10,7 +10,10 @@ class Level
         std::string _level;
         size_t _lyricIndex;
         size_t _rhythmIndex;
+        size_t _melodyIndex;
         ma_engine _engine;
+        ma_sound _sound;
+        bool _soundInitialized;
         bool _engineInitialized;
         bool _radioOn;
 
@@ -25,7 +28,7 @@ class Level
         bool isRadioOn() const;
 
         int lyrics(std::string& prompt, std::string& answer);
-        void melody();
+        int melody(std::string& prompt, std::string& answer);
         int rhythm(std::string& prompt, std::string& answer);
         void stopAudio();
 };
