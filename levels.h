@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "miniaudio.h"
 
@@ -20,6 +22,20 @@ class Level
     protected:
         bool Digits(std::string s);
         std::string trim(std::string s);
+        std::string genreKey(const std::string& genre);
+        std::string genreFilePath(const std::string& genre);
+        std::string answerFilePath(const std::string& mode, const std::string& genre);
+        bool loadGenreSections(
+            const std::string& genre,
+            std::map<std::string, std::vector<std::pair<std::string, std::string>>>& sections
+        );
+        bool loadEntriesFromFile(
+            const std::string& filePath,
+            std::vector<std::pair<std::string, std::string>>& entries,
+            bool requireNumbering
+        );
+        size_t& modeIndex(const std::string& mode);
+        std::string musicFilePath(const std::string& mode, const std::string& fileName);
 
     public:
         Level(std::string level = "");
@@ -27,8 +43,7 @@ class Level
         std::string getLevel();
         bool isRadioOn() const;
 
-        int lyrics(std::string& prompt, std::string& answer);
-        int melody(std::string& prompt, std::string& answer);
-        int rhythm(std::string& prompt, std::string& answer);
+        int lyrics(const std::string& genre, std::string& prompt, std::string& answer);
+        int playMusic(const std::string& mode, const std::string& genre, std::string& prompt, std::string& answer);
         void stopAudio();
 };

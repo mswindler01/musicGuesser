@@ -1,0 +1,12 @@
+[lyrics]
+"Dashing through the"; Jingle Bells
+"Where the treetops glisten"; Silver Bells
+"Yuletide carols being sung"; It's Beginning to Look a Lot Like Christmas
+"Everyone dancing merrily"; Rockin' Around the Christmas Tree
+
+
+[melody]
+JB.wav; Jingle Bells
+
+[rhythm]
+JBrhythm.wav; Jingle Bells
