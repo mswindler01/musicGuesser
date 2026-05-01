@@ -35,7 +35,7 @@ class Level
             bool requireNumbering
         );
         size_t& modeIndex(const std::string& mode);
-        std::string musicFilePath(const std::string& mode, const std::string& fileName);
+        std::string musicFilePath(const std::string& mode, const std::string& genre, const std::string& fileName);
 
     public:
         Level(std::string level = "");

@@ -54,6 +54,15 @@ static string trimCopy(const string& text)
     return text.substr(start, end - start);
 }
 
+static string normalizedGuess(const string& text)
+{
+    string normalized = trimCopy(text);
+    transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char ch) {
+        return static_cast<char>(tolower(ch));
+    });
+    return normalized;
+}
+
 static void pushMessage(vector<string>& messages, const string& message)
 {
     if (message.empty()) {
@@ -232,7 +241,7 @@ static void showGenreMenu(GameData& game)
     game.inputBuffer.clear();
     game.messages.clear();
     pushMessage(game.messages, "Choose a genre to start.");
-    pushMessage(game.messages, "These are placeholder labels for your team to rename.");
+    //pushMessage(game.messages, "These are placeholder labels for your team to rename.");
     game.state = AppState::ChooseGenre;
 }
 
@@ -286,7 +295,7 @@ static void finishRound(GameData& game, const string& rawInput)
     }
 
     game.level.stopAudio();
-    if (value == game.currentAnswer) {
+    if (normalizedGuess(value) == normalizedGuess(game.currentAnswer)) {
         pushMessage(game.messages, "You guessed correctly!");
     } else {
         pushMessage(game.messages, "You guessed wrong.");

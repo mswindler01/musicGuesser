@@ -7,6 +7,13 @@
 
 [melody]
 JB.wav; Jingle Bells
+SilverBells.wav; Silver Bells
+IBTLALLCMelody.wav; It's Beginning to Look a Lot Like Christmas
+RockinMelody.wav; Rockin' Around the Christmas Tree
 
 [rhythm]
 JBrhythm.wav; Jingle Bells
+SilverBellsRhythm.wav; Silver Bells
+IBTLALLCRhythm.wav; It's Beginning to Look a Lot Like Christmas
+RockinRhythm.wav; Rockin' Around the Christmas Tree
+

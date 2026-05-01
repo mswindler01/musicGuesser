@@ -223,12 +223,38 @@ size_t& Level::modeIndex(const string& mode)
     return _melodyIndex;
 }
 
-string Level::musicFilePath(const string& mode, const string& fileName)
+string Level::musicFilePath(const string& mode, const string& genre, const string& fileName)
 {
-    if (mode == "melody" || mode == "rhythm") {
-        return string(kMusicDir) + mode + "/" + fileName;
+    const filesystem::path musicRoot(kMusicDir);
+    const filesystem::path requestedPath(fileName);
+
+    if (requestedPath.is_absolute() && filesystem::exists(requestedPath)) {
+        return requestedPath.string();
     }
-    return string(kMusicDir) + fileName;
+
+    const vector<filesystem::path> candidates = {
+        musicRoot / fileName,
+        musicRoot / mode / fileName,
+        musicRoot / mode / genre / fileName,
+        musicRoot / mode / genreKey(genre) / fileName
+    };
+
+    for (const filesystem::path& candidate : candidates) {
+        if (filesystem::exists(candidate)) {
+            return candidate.string();
+        }
+    }
+
+    const filesystem::path modePath = musicRoot / mode;
+    if (filesystem::exists(modePath)) {
+        for (const auto& entry : filesystem::recursive_directory_iterator(modePath)) {
+            if (entry.is_regular_file() && entry.path().filename() == requestedPath.filename()) {
+                return entry.path().string();
+            }
+        }
+    }
+
+    return (musicRoot / mode / fileName).string();
 }
 
 int Level::lyrics(const string& genre, string& prompt, string& answer)
@@ -278,7 +304,7 @@ int Level::playMusic(const string& mode, const string& genre, string& prompt, st
         const size_t index = currentIndex % songs.size();
         ++currentIndex;
 
-        const string fileName = musicFilePath(mode, songs[index].first);
+        const string fileName = musicFilePath(mode, genre, songs[index].first);
         answer = songs[index].second;
 
         stopAudio();
@@ -318,7 +344,7 @@ int Level::playMusic(const string& mode, const string& genre, string& prompt, st
     const size_t index = currentIndex % songs.size();
     ++currentIndex;
 
-    const string fileName = musicFilePath(mode, songs[index].first);
+    const string fileName = musicFilePath(mode, genre, songs[index].first);
     answer = songs[index].second;
 
     stopAudio();
