@@ -166,7 +166,7 @@ static vector<Button> buildGenreButtons(int width, int height)
     const int startX = (width - totalWidth) / 2;
     const int startY = (height / 2) - 80;
 
-    const char* genreLabels[] = {"Christmas", "RNB", "Genre 3", "Genre 4"};
+    const char* genreLabels[] = {"Christmas", "RNB", "Rock", "Genre 4"};
 
     for (int index = 0; index < 4; ++index) {
         const int row = index / 2;
