@@ -37,6 +37,7 @@ struct GameData {
     AppState state;
     bool quit;
     string mode;
+    int score = 0;
 };
 
 static string trimCopy(const string& text)
@@ -297,11 +298,14 @@ static void finishRound(GameData& game, const string& rawInput)
     game.level.stopAudio();
     if (normalizedGuess(value) == normalizedGuess(game.currentAnswer)) {
         pushMessage(game.messages, "You guessed correctly!");
+        game.score += 10;
     } else {
         pushMessage(game.messages, "You guessed wrong.");
         pushMessage(game.messages, "Answer: " + game.currentAnswer);
+        game.score -= 5;
     }
 
+    pushMessage(game.messages, "Score: " + to_string(game.score));
     pushMessage(game.messages, "Choose what to do next.");
     game.state = AppState::AskReplay;
     game.inputBuffer.clear();
@@ -335,6 +339,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     GameData game;
     game.state = AppState::ChooseGenre;
     game.quit = false;
+    game.score = 0;
 
     vector<SDL_Texture*> backgroundTextures;
     vector<SDL_Texture*> radioTextures;
