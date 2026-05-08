@@ -297,12 +297,22 @@ static void finishRound(GameData& game, const string& rawInput)
 
     game.level.stopAudio();
     if (normalizedGuess(value) == normalizedGuess(game.currentAnswer)) {
+        // scoring based on mode
+        int points = 0; 
+        if (game.mode == "rhythm") {
+            points = 30;
+        } else if (game.mode == "melody") {
+            points = 20;
+        } else if (game.mode == "lyrics") {
+            points = 10;
+        }
         pushMessage(game.messages, "You guessed correctly!");
-        game.score += 10;
+        pushMessage(game.messages, string("+ ") + to_string(points) + " points.");
+        game.score += points;
     } else {
         pushMessage(game.messages, "You guessed wrong.");
         pushMessage(game.messages, "Answer: " + game.currentAnswer);
-        game.score -= 5;
+        game.score -= 10; // -10 points for incorrect answer
     }
 
     pushMessage(game.messages, "Score: " + to_string(game.score));
@@ -455,6 +465,16 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
         SDL_Color textColor = {236, 240, 241, 255};
         SDL_Color inputColor = {122, 214, 196, 255};
         SDL_Color buttonTextColor = {244, 244, 244, 255};
+        // Used to display score 
+        string scoreText = "Score: " + to_string(game.score);
+        int scoreTextWidth = 0;
+        int scoreTextHeight = 0;
+        TTF_SizeUTF8(font, scoreText.c_str(), &scoreTextWidth, &scoreTextHeight);
+        if (!renderTextBlock(renderer, font, scoreText, headingColor, width - padding - scoreTextWidth, padding, scoreTextWidth)) {
+            SDL_StopTextInput();
+            cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
+            return -1;
+        }
 
         if (game.state == AppState::ChooseGenre) {
             if (!renderTextBlock(renderer, font, "Main Menu", headingColor, padding, 70, width - (padding * 2)) ||
