@@ -166,7 +166,8 @@ static vector<Button> buildGenreButtons(int width, int height)
     const int startX = (width - totalWidth) / 2;
     const int startY = (height / 2) - 80;
 
-    const char* genreLabels[] = {"Christmas", "RNB", "Genre 3", "Genre 4"};
+    const char* genreLabels[] = {"Christmas", "RNB", "Genre 3", "Quit"};
+    const char* genreValues[] = {"Christmas", "RNB", "Genre 3", "exit"};
 
     for (int index = 0; index < 4; ++index) {
         const int row = index / 2;
@@ -179,7 +180,7 @@ static vector<Button> buildGenreButtons(int width, int height)
             buttonHeight
         };
         button.label = genreLabels[index];
-        button.value = button.label;
+        button.value = genreValues[index];
         buttons.push_back(button);
     }
 
@@ -228,8 +229,8 @@ static vector<Button> buildReplayButtons(int width, int height)
 
     Button noButton;
     noButton.rect = {startX + buttonWidth + gap, y, buttonWidth, buttonHeight};
-    noButton.label = "Quit";
-    noButton.value = "quit";
+    noButton.label = "Main Menu";
+    noButton.value = "main-menu";
     buttons.push_back(noButton);
 
     return buttons;
@@ -315,15 +316,19 @@ static void handleMenuClick(GameData& game, int mouseX, int mouseY, const vector
         }
 
         if (game.state == AppState::ChooseGenre) {
-            game.selectedGenre = button.value;
-            showModeMenu(game);
+            if (button.value == "exit") {
+                game.quit = true;
+            } else {
+                game.selectedGenre = button.value;
+                showModeMenu(game);
+            }
         } else if (game.state == AppState::ChooseMode) {
             beginRound(game, button.value);
         } else if (game.state == AppState::AskReplay) {
             if (button.value == "play-again") {
                 showGenreMenu(game);
-            } else if (button.value == "quit") {
-                game.quit = true;
+            } else if (button.value == "main-menu") {
+                showGenreMenu(game);
             }
         }
         return;
@@ -453,7 +458,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
 
         if (game.state == AppState::ChooseGenre) {
             if (!renderTextBlock(renderer, font, "Main Menu", headingColor, padding, 70, width - (padding * 2)) ||
-                !renderTextBlock(renderer, font, "Click a placeholder genre.", textColor, padding, 120, width - (padding * 2))) {
+                !renderTextBlock(renderer, font, "Choose a genre or exit the game.", textColor, padding, 120, width - (padding * 2))) {
                 SDL_StopTextInput();
                 cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                 return -1;
