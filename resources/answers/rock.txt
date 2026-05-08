@@ -1,0 +1,17 @@
+[lyrics]
+"Here we are now, entertain us"; Smells like Teen Spirit
+"We'll be playing and having fun"; Island in the Sun
+"The hammer of the gods"; Immigrant Song
+"I've seen people turn their heads and quickly look away"; Paint it Black
+
+[melody]
+SmellsLikeTeenSpiritMelody.wav; Smells like Teen Spirit
+IslandInTheSunMelody.wav; Island in the Sun
+ImmigrantSongMelody.wav; Immigrant Song
+PaintItBlackMelody.wav; Paint it Black
+
+[rhythm]
+SmellsLikeTeenSpiritRhythm.wav; Smells like Teen Spirit
+IslandInTheSunRhythm.wav; Island in the Sun
+ImmigrantSongRhythm.wav; Immigrant Song
+PaintItBlackRhythm.wav; Paint it Black
