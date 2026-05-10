@@ -40,6 +40,277 @@ struct GameData {
     int score = 0;
 };
 
+// Paul: Declarations for visuals
+static SDL_Texture* loadTexture(SDL_Renderer* renderer, const string& fileName, bool useColorKey);
+static bool isChristmasGenre(const string& genre);
+static bool isRnbGenre(const string& genre);
+static bool isRockGenre(const string& genre);
+
+// Paul: Sprite class
+class Sprite {
+    vector<SDL_Texture*> textures;
+    SDL_Rect dst;
+    int which;
+    int totalMillis;
+    int frameTime;
+
+// Paul: Sprite methods
+public:
+    Sprite()
+    {
+        dst = {0, 0, 0, 0};
+        which = 0;
+        totalMillis = 0;
+        frameTime = 250;
+    }
+
+    // Paul: Load sprite image files
+    bool load(SDL_Renderer* renderer, const vector<string>& fileNames,
+              int x, int y, int w, int h, bool useColorKey, int newFrameTime)
+    {
+        dst = {x, y, w, h};
+        frameTime = newFrameTime;
+        which = 0;
+        totalMillis = 0;
+
+        for (const string& name : fileNames) {
+            SDL_Texture* texture = loadTexture(renderer, "resources/images/" + name, useColorKey);
+            if (texture == NULL) {
+                return false;
+            }
+            textures.push_back(texture);
+        }
+
+        return true;
+    }
+
+    // Paul: Update sprite frames
+    void update(float dt)
+    {
+        if (textures.size() <= 1) {
+            return;
+        }
+
+        totalMillis += static_cast<int>(dt * 1000);
+        while (totalMillis >= frameTime) {
+            which++;
+            if (which >= static_cast<int>(textures.size())) {
+                which = 0;
+            }
+            totalMillis -= frameTime;
+        }
+    }
+
+    // Paul: Set sprite back to its idle frame
+    void idle()
+    {
+        which = 0;
+        totalMillis = 0;
+    }
+
+    // Paul: Draw the current sprite frame
+    void draw(SDL_Renderer* renderer)
+    {
+        if (textures.empty()) {
+            return;
+        }
+
+        if (which < 0 || which >= static_cast<int>(textures.size())) {
+            which = 0;
+        }
+
+        SDL_RenderCopy(renderer, textures[which], NULL, &dst);
+    }
+
+    ~Sprite()
+    {
+        for (SDL_Texture* texture : textures) {
+            if (texture != NULL) {
+                SDL_DestroyTexture(texture);
+            }
+        }
+        textures.clear();
+    }
+};
+
+// Paul: Artwork grouping class
+class Artwork {
+    Sprite titleBackground;
+    Sprite titleName;
+    Sprite record;
+
+    Sprite rnbBackground;
+    Sprite rnbInterior;
+    Sprite rnbRadio;
+
+    Sprite christmasBackground;
+    Sprite deer;
+    Sprite christmasInterior;
+    Sprite christmasRadio;
+
+    Sprite rockBackground;
+    Sprite rockInterior;
+    Sprite rockRadio;
+
+public:
+    // Paul: Load BMP files
+    bool setup(SDL_Renderer* renderer, int width, int height)
+    {
+        if (!titleBackground.load(renderer,
+            {"title01.bmp", "title02.bmp", "title03.bmp", "title04.bmp"},
+            0, 0, width, height, false, 400)) {
+            return false;
+        }
+
+        if (!titleName.load(renderer, {"name01.bmp"},
+            0, 0, width, height, true, 400)) {
+            return false;
+        }
+
+        if (!record.load(renderer,
+            {"record01.bmp", "record02.bmp", "record03.bmp", "record04.bmp"},
+            0, 0, width, height, true, 400)) {
+            return false;
+        }
+
+        if (!rnbBackground.load(renderer,
+            {"background0.bmp", "background1.bmp", "background2.bmp", "background3.bmp"},
+            0, -200, width, height, false, 120)) {
+            return false;
+        }
+
+        if (!rnbInterior.load(renderer, {"interior0.bmp"},
+            0, 0, width, height, true, 250)) {
+            return false;
+        }
+
+        if (!rnbRadio.load(renderer,
+            {"radio0.bmp", "radio1.bmp", "radio2.bmp", "radio3.bmp", "radio4.bmp"},
+            0, 0, width, height, true, 300)) {
+            return false;
+        }
+
+        if (!christmasBackground.load(renderer, {"cbackground01.bmp"},
+            0, -50, width, height, false, 250)) {
+            return false;
+        }
+
+        if (!deer.load(renderer,
+            {"deer01.bmp", "deer02.bmp", "deer03.bmp", "deer04.bmp"},
+            0, 0, width, height, true, 140)) {
+            return false;
+        }
+
+        if (!christmasInterior.load(renderer, {"cinterior01.bmp"},
+            0, 0, width, height, true, 250)) {
+            return false;
+        }
+
+        if (!christmasRadio.load(renderer,
+            {"cradio00.bmp", "cradio01.bmp", "cradio02.bmp", "cradio03.bmp"},
+            0, 0, width, height, true, 300)) {
+            return false;
+        }
+
+        if (!rockBackground.load(renderer,
+            {"rbackground01.bmp", "rbackground02.bmp", "rbackground03.bmp"},
+            0, -180, width, height, false, 400)) {
+            return false;
+        }
+
+        if (!rockInterior.load(renderer, {"rinterior01.bmp"},
+            0, 0, width, height, true, 250)) {
+            return false;
+        }
+
+        if (!rockRadio.load(renderer,
+            {"Rradio00.bmp", "Rradio01.bmp", "Rradio02.bmp", "Rradio03.bmp"},
+            0, 0, width, height, true, 300)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Paul: Update visual frames
+    void update(float dt, bool radioOn)
+    {
+        titleBackground.update(dt);
+        record.update(dt);
+        rnbBackground.update(dt);
+        deer.update(dt);
+        rockBackground.update(dt);
+
+        if (radioOn) {
+            rnbRadio.update(dt);
+            christmasRadio.update(dt);
+            rockRadio.update(dt);
+        } else {
+            rnbRadio.idle();
+            christmasRadio.idle();
+            rockRadio.idle();
+        }
+    }
+
+    // Paul: Draw proper visuals based on selectedGenre
+    void draw(SDL_Renderer* renderer, const GameData& game)
+    {
+        if (game.state == AppState::ChooseGenre) {
+            titleBackground.draw(renderer);
+            titleName.draw(renderer);
+            record.draw(renderer);
+        } else if (isChristmasGenre(game.selectedGenre)) {
+            christmasBackground.draw(renderer);
+            deer.draw(renderer);
+            christmasInterior.draw(renderer);
+            christmasRadio.draw(renderer);
+        } else if (isRnbGenre(game.selectedGenre)) {
+            rnbBackground.draw(renderer);
+            rnbInterior.draw(renderer);
+            rnbRadio.draw(renderer);
+        } else if (isRockGenre(game.selectedGenre)) {
+            rockBackground.draw(renderer);
+            rockInterior.draw(renderer);
+            rockRadio.draw(renderer);
+        }
+    }
+};
+
+// Paul: Load BMP files and apply 255 255 255 color key for transparency
+static SDL_Texture* loadTexture(SDL_Renderer* renderer, const string& fileName, bool useColorKey)
+{
+    SDL_Surface* surface = SDL_LoadBMP(fileName.c_str());
+    if (surface == NULL) {
+        return NULL;
+    }
+
+    if (useColorKey) {
+        Uint32 key = SDL_MapRGB(surface->format, 255, 255, 255);
+        SDL_SetColorKey(surface, SDL_TRUE, key);
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+    return texture;
+}
+
+// Paul: Visual genre checks
+static bool isChristmasGenre(const string& genre)
+{
+    return genre == "Christmas";
+}
+
+static bool isRnbGenre(const string& genre)
+{
+    return genre == "RNB";
+}
+
+static bool isRockGenre(const string& genre)
+{
+    return genre == "Rock";
+}
+
+
 static string trimCopy(const string& text)
 {
     size_t start = 0;
@@ -76,40 +347,6 @@ static void pushMessage(vector<string>& messages, const string& message)
     }
 }
 
-static SDL_Texture* loadTexture(SDL_Renderer* renderer, const string& fileName)
-{
-    SDL_Surface* surface = SDL_LoadBMP(fileName.c_str());
-    if (surface == NULL) {
-        return NULL;
-    }
-
-    Uint32 key = SDL_MapRGB(surface->format, 255, 255, 255);
-    SDL_SetColorKey(surface, SDL_TRUE, key);
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-    return texture;
-}
-
-static void destroyTextureArray(vector<SDL_Texture*>& textures)
-{
-    for (SDL_Texture* texture : textures) {
-        if (texture != NULL) {
-            SDL_DestroyTexture(texture);
-        }
-    }
-    textures.clear();
-}
-
-static void cleanupVisuals(vector<SDL_Texture*>& backgroundTextures, vector<SDL_Texture*>& radioTextures, SDL_Texture* interiorTexture)
-{
-    destroyTextureArray(backgroundTextures);
-    destroyTextureArray(radioTextures);
-    if (interiorTexture != NULL) {
-        SDL_DestroyTexture(interiorTexture);
-    }
-}
-
 static bool renderTextBlock(SDL_Renderer* renderer, TTF_Font* font, const string& text, SDL_Color color, int x, int y, int wrapWidth)
 {
     SDL_Surface* surface = TTF_RenderUTF8_Blended_Wrapped(font, text.c_str(), color, wrapWidth);
@@ -139,6 +376,19 @@ static bool renderButton(SDL_Renderer* renderer, TTF_Font* font, const Button& b
     SDL_SetRenderDrawColor(renderer, 244, 244, 244, 255);
     SDL_RenderDrawRect(renderer, &button.rect);
 
+    int textWidth = 0;
+    int textHeight = 0;
+    if (TTF_SizeUTF8(font, button.label.c_str(), &textWidth, &textHeight) != 0) {
+        return false;
+    }
+
+    const int textX = button.rect.x + (button.rect.w - textWidth) / 2;
+    const int textY = button.rect.y + (button.rect.h - textHeight) / 2;
+    return renderTextBlock(renderer, font, button.label, textColor, textX, textY, button.rect.w - 24);
+}
+
+static bool renderMenuLabelOnly(SDL_Renderer* renderer, TTF_Font* font, const Button& button, SDL_Color textColor)
+{
     int textWidth = 0;
     int textHeight = 0;
     if (TTF_SizeUTF8(font, button.label.c_str(), &textWidth, &textHeight) != 0) {
@@ -243,7 +493,6 @@ static void showGenreMenu(GameData& game)
     game.inputBuffer.clear();
     game.messages.clear();
     pushMessage(game.messages, "Choose a genre to start.");
-    //pushMessage(game.messages, "These are placeholder labels for your team to rename.");
     game.state = AppState::ChooseGenre;
 }
 
@@ -298,8 +547,7 @@ static void finishRound(GameData& game, const string& rawInput)
 
     game.level.stopAudio();
     if (normalizedGuess(value) == normalizedGuess(game.currentAnswer)) {
-        // scoring based on mode
-        int points = 0; 
+        int points = 0;
         if (game.mode == "rhythm") {
             points = 30;
         } else if (game.mode == "melody") {
@@ -307,13 +555,14 @@ static void finishRound(GameData& game, const string& rawInput)
         } else if (game.mode == "lyrics") {
             points = 10;
         }
+
         pushMessage(game.messages, "You guessed correctly!");
         pushMessage(game.messages, string("+ ") + to_string(points) + " points.");
         game.score += points;
     } else {
         pushMessage(game.messages, "You guessed wrong.");
         pushMessage(game.messages, "Answer: " + game.currentAnswer);
-        game.score -= 10; // -10 points for incorrect answer
+        game.score -= 10;
     }
 
     pushMessage(game.messages, "Score: " + to_string(game.score));
@@ -356,46 +605,16 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     game.quit = false;
     game.score = 0;
 
-    vector<SDL_Texture*> backgroundTextures;
-    vector<SDL_Texture*> radioTextures;
-
-    backgroundTextures.push_back(loadTexture(renderer, "resources/images/background0.bmp"));
-    backgroundTextures.push_back(loadTexture(renderer, "resources/images/background1.bmp"));
-    backgroundTextures.push_back(loadTexture(renderer, "resources/images/background2.bmp"));
-    backgroundTextures.push_back(loadTexture(renderer, "resources/images/background3.bmp"));
-
-    radioTextures.push_back(loadTexture(renderer, "resources/images/radio0.bmp"));
-    radioTextures.push_back(loadTexture(renderer, "resources/images/radio1.bmp"));
-    radioTextures.push_back(loadTexture(renderer, "resources/images/radio2.bmp"));
-    radioTextures.push_back(loadTexture(renderer, "resources/images/radio3.bmp"));
-
-    SDL_Texture* interiorTexture = loadTexture(renderer, "resources/images/interior0.bmp");
-
-    for (SDL_Texture* texture : backgroundTextures) {
-        if (texture == NULL) {
-            cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
-            return -1;
-        }
-    }
-
-    for (SDL_Texture* texture : radioTextures) {
-        if (texture == NULL) {
-            cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
-            return -1;
-        }
-    }
-
-    if (interiorTexture == NULL) {
-        cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
+    // Paul: Create and load artwork
+    Artwork artwork;
+    if (!artwork.setup(renderer, width, height)) {
         return -1;
     }
 
     showGenreMenu(game);
 
-    int backgroundFrame = 0;
-    int radioFrame = 0;
-    Uint32 lastBackgroundTick = SDL_GetTicks();
-    Uint32 lastRadioTick = SDL_GetTicks();
+    // Paul: animation timing
+    Uint32 lastTick = SDL_GetTicks();
 
     SDL_Event e;
     SDL_StartTextInput();
@@ -437,62 +656,37 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
             }
         }
 
-        const Uint32 currentTick = SDL_GetTicks();
+        // Paul: Update animation frames
+        Uint32 currentTick = SDL_GetTicks();
+        float dt = static_cast<float>(currentTick - lastTick) / 1000.0f;
+        lastTick = currentTick;
 
-        if (currentTick - lastBackgroundTick >= 120) {
-            backgroundFrame = (backgroundFrame + 1) % 4;
-            lastBackgroundTick = currentTick;
-        }
-
-        if (game.level.isRadioOn()) {
-            if (currentTick - lastRadioTick >= 300) {
-                radioFrame++;
-                if (radioFrame < 1 || radioFrame > 3) {
-                    radioFrame = 1;
-                }
-                lastRadioTick = currentTick;
-            }
-        } else {
-            radioFrame = 0;
-        }
+        artwork.update(dt, game.level.isRadioOn());
 
         SDL_SetRenderDrawColor(renderer, 18, 22, 28, 255);
         SDL_RenderClear(renderer);
 
-        SDL_Rect backgroundRect = {0, -200, width, height};
-        SDL_Rect fullScreen = {0, 0, width, height};
-
-        SDL_RenderCopy(renderer, backgroundTextures[backgroundFrame], NULL, &backgroundRect);
-        SDL_RenderCopy(renderer, interiorTexture, NULL, &fullScreen);
-        SDL_RenderCopy(renderer, radioTextures[radioFrame], NULL, &fullScreen);
+        // Paul: Draw genre images
+        artwork.draw(renderer, game);
 
         SDL_Color headingColor = {249, 233, 166, 255};
         SDL_Color textColor = {236, 240, 241, 255};
         SDL_Color inputColor = {122, 214, 196, 255};
         SDL_Color buttonTextColor = {244, 244, 244, 255};
-        // Used to display score 
+
         string scoreText = "Score: " + to_string(game.score);
         int scoreTextWidth = 0;
         int scoreTextHeight = 0;
         TTF_SizeUTF8(font, scoreText.c_str(), &scoreTextWidth, &scoreTextHeight);
         if (!renderTextBlock(renderer, font, scoreText, headingColor, width - padding - scoreTextWidth, padding, scoreTextWidth)) {
             SDL_StopTextInput();
-            cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
             return -1;
         }
 
         if (game.state == AppState::ChooseGenre) {
-            if (!renderTextBlock(renderer, font, "Main Menu", headingColor, padding, 70, width - (padding * 2)) ||
-                !renderTextBlock(renderer, font, "Choose a genre or exit the game.", textColor, padding, 120, width - (padding * 2))) {
-                SDL_StopTextInput();
-                cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
-                return -1;
-            }
-
             for (const Button& button : genreButtons) {
-                if (!renderButton(renderer, font, button, {28, 87, 122, 220}, buttonTextColor)) {
+                if (!renderMenuLabelOnly(renderer, font, button, buttonTextColor)) {
                     SDL_StopTextInput();
-                    cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                     return -1;
                 }
             }
@@ -501,14 +695,12 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
                 !renderTextBlock(renderer, font, game.selectedGenre, textColor, padding, 120, width - (padding * 2)) ||
                 !renderTextBlock(renderer, font, "Click how the player should guess the song.", textColor, padding, 170, width - (padding * 2))) {
                 SDL_StopTextInput();
-                cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                 return -1;
             }
 
             for (const Button& button : modeButtons) {
                 if (!renderButton(renderer, font, button, {123, 63, 0, 220}, buttonTextColor)) {
                     SDL_StopTextInput();
-                    cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                     return -1;
                 }
             }
@@ -517,7 +709,6 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
             for (const string& message : game.messages) {
                 if (!renderTextBlock(renderer, font, message, textColor, padding, y, width - (padding * 2))) {
                     SDL_StopTextInput();
-                    cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                     return -1;
                 }
 
@@ -529,14 +720,12 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
             if (game.state == AppState::EnterGuess) {
                 if (!renderTextBlock(renderer, font, "> " + game.inputBuffer, inputColor, padding, height - 80, width - (padding * 2))) {
                     SDL_StopTextInput();
-                    cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                     return -1;
                 }
             } else if (game.state == AppState::AskReplay) {
                 for (const Button& button : replayButtons) {
                     if (!renderButton(renderer, font, button, {42, 92, 53, 220}, buttonTextColor)) {
                         SDL_StopTextInput();
-                        cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
                         return -1;
                     }
                 }
@@ -548,7 +737,5 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     }
 
     SDL_StopTextInput();
-    cleanupVisuals(backgroundTextures, radioTextures, interiorTexture);
-
     return 0;
 }
