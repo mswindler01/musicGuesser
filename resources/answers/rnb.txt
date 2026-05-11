@@ -1,5 +1,44 @@
 [lyrics]
 
+"You start to freeze, as horror loosks you right between
+the eyes, You're paralyzed 'cause this is..."; Thriller
+
+
+"So You're a Tough Guy 
+Like It Really Rough Guy
+Just Can't Get Enough Guy
+Chest Always so Puffed Guy..."; Bad Guy
+
+
+"I ain't been getting high
+well maybe a little baby 
+I don't want to lie
+I know when you text me girl 
+I don't always reply..."; iSpy
+
+
+"Baby, you know that i miss you, i wanna get with you 
+Tonight, but i cannot, and that's the issue,
+Girl you know i miss you. i just wanna kiss you, but i 
+can not right now..."; Kiss me thru the phone
+
 [melody]
 
+rnbmelody1.wav; Thiller
+
+rnbmelody2.wav, Bad Guy
+
+rnbmelody3.wav,  ISpy
+
+rnbmelody4.wav; Kiss me thru the phone
+
+
 [rhythm]
+
+rnbrhythm1.wav; Thriller
+
+rnbrhythm2.wav; Bad Guy
+
+rnbrhythm3.wav; ISpy
+
+rnbrhythm4.wav; Kiss me thru the phone
