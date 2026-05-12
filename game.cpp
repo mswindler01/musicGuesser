@@ -9,11 +9,12 @@
 #include <SDL_surface.h>
 
 #include "levels.h"
-
+#include <iostream>
 using namespace std;
 
 static const int padding = 24;
 static const size_t maxMessages = 14;
+
 
 enum class AppState {
     ChooseGenre,
@@ -38,6 +39,10 @@ struct GameData {
     bool quit;
     string mode;
     int score = 0;
+
+
+    // Maleia: Album cover popup
+    SDL_Texture* albumCoverTexture = nullptr;
 };
 
 // Paul: Declarations for visuals
@@ -447,7 +452,6 @@ static vector<Button> buildModeButtons(int width, int height)
     const int totalWidth = (buttonWidth * 3) + (gap * 2);
     const int startX = (width - totalWidth) / 2;
     const int y = (height / 2) - 10;
-
     const char* labels[] = {"Lyrics", "Melody", "Rhythm"};
     const char* values[] = {"lyrics", "melody", "rhythm"};
 
@@ -487,11 +491,67 @@ static vector<Button> buildReplayButtons(int width, int height)
     return buttons;
 }
 
+// Destroy album cover texture and clear the pointer
+static void clearAlbumCover(GameData& game)
+{
+    if (game.albumCoverTexture) {
+        SDL_DestroyTexture(game.albumCoverTexture);
+        game.albumCoverTexture = nullptr;
+    }
+}
+
+// Draw the album cover popup centered on screen, above the replay buttons
+static void drawAlbumCoverPopup(SDL_Renderer* renderer, TTF_Font* font, GameData& game, int width, int height)
+{
+    if (!game.albumCoverTexture) {
+        return;
+    }
+
+    const int coverSize = 280;
+    const int coverX = (width - coverSize) / 2;
+
+    // Position the cover so it sits comfortably above the replay buttons (which are at height-190)
+    // Leave room for the result text above the cover
+    const int coverY = height - 190 - coverSize - 20;
+
+    // Dark semi-transparent backdrop with a border
+    const int borderPad = 10;
+    SDL_Rect backdrop = {
+        coverX - borderPad,
+        coverY - borderPad,
+        coverSize + (borderPad * 2),
+        coverSize + (borderPad * 2)
+    };
+
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
+    SDL_RenderFillRect(renderer, &backdrop);
+
+    // Bright border around the cover
+    SDL_SetRenderDrawColor(renderer, 249, 233, 166, 255);
+    SDL_RenderDrawRect(renderer, &backdrop);
+
+    // Draw an inner border for a polished look
+    SDL_Rect innerBorder = {
+        backdrop.x + 2,
+        backdrop.y + 2,
+        backdrop.w - 4,
+        backdrop.h - 4
+    };
+    SDL_SetRenderDrawColor(renderer, 180, 160, 100, 180);
+    SDL_RenderDrawRect(renderer, &innerBorder);
+
+    // The cover image itself
+    SDL_Rect coverDst = {coverX, coverY, coverSize, coverSize};
+    SDL_RenderCopy(renderer, game.albumCoverTexture, NULL, &coverDst);
+}
+
 static void showGenreMenu(GameData& game)
 {
     game.level.stopAudio();
     game.inputBuffer.clear();
     game.messages.clear();
+    clearAlbumCover(game);
     pushMessage(game.messages, "Choose a genre to start.");
     game.state = AppState::ChooseGenre;
 }
@@ -501,6 +561,7 @@ static void showModeMenu(GameData& game)
     game.level.stopAudio();
     game.inputBuffer.clear();
     game.messages.clear();
+    clearAlbumCover(game);
     pushMessage(game.messages, "Selected " + game.selectedGenre + ".");
     pushMessage(game.messages, "Choose whether to guess by lyrics, melody, or rhythm.");
     game.state = AppState::ChooseMode;
@@ -513,6 +574,7 @@ static void beginRound(GameData& game, const string& nextMode)
     game.mode = nextMode;
     game.inputBuffer.clear();
     game.messages.clear();
+    clearAlbumCover(game);
     pushMessage(game.messages, "Genre: " + game.selectedGenre);
 
     if (game.mode == "lyrics") {
@@ -538,7 +600,7 @@ static void beginRound(GameData& game, const string& nextMode)
     game.state = AppState::EnterGuess;
 }
 
-static void finishRound(GameData& game, const string& rawInput)
+static void finishRound(GameData& game, const string& rawInput, SDL_Renderer* renderer)
 {
     const string value = trimCopy(rawInput);
     if (value.empty()) {
@@ -546,6 +608,17 @@ static void finishRound(GameData& game, const string& rawInput)
     }
 
     game.level.stopAudio();
+
+    // Load the album cover for the current song
+    clearAlbumCover(game);
+    const string coverPath = game.level.coverImagePath();
+    if (!coverPath.empty()) {
+        // loadTexture returns NULL silently if the file doesn't exist — that's fine,
+        // the popup simply won't show if no cover BMP is found
+       cout << "Cover path: " << coverPath << endl;
+        game.albumCoverTexture = loadTexture(renderer, coverPath, false);
+    }
+
     if (normalizedGuess(value) == normalizedGuess(game.currentAnswer)) {
         int points = 0;
         if (game.mode == "rhythm") {
@@ -604,12 +677,17 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     game.state = AppState::ChooseGenre;
     game.quit = false;
     game.score = 0;
+    game.albumCoverTexture = nullptr;
+
+ 
 
     // Paul: Create and load artwork
     Artwork artwork;
     if (!artwork.setup(renderer, width, height)) {
         return -1;
     }
+
+    
 
     showGenreMenu(game);
 
@@ -650,7 +728,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
                     if (e.key.keysym.sym == SDLK_BACKSPACE && !game.inputBuffer.empty()) {
                         game.inputBuffer.pop_back();
                     } else if (e.key.keysym.sym == SDLK_RETURN || e.key.keysym.sym == SDLK_KP_ENTER) {
-                        finishRound(game, game.inputBuffer);
+                        finishRound(game, game.inputBuffer, renderer);
                     }
                 }
             }
@@ -662,12 +740,19 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
         lastTick = currentTick;
 
         artwork.update(dt, game.level.isRadioOn());
+       
 
         SDL_SetRenderDrawColor(renderer, 18, 22, 28, 255);
         SDL_RenderClear(renderer);
 
         // Paul: Draw genre images
         artwork.draw(renderer, game);
+
+        
+        // Draw album cover popup on top of background, behind text and buttons
+        if (game.state == AppState::AskReplay) {
+            drawAlbumCoverPopup(renderer, font, game, width, height);
+        }
 
         SDL_Color headingColor = {249, 233, 166, 255};
         SDL_Color textColor = {236, 240, 241, 255};
@@ -680,6 +765,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
         TTF_SizeUTF8(font, scoreText.c_str(), &scoreTextWidth, &scoreTextHeight);
         if (!renderTextBlock(renderer, font, scoreText, headingColor, width - padding - scoreTextWidth, padding, scoreTextWidth)) {
             SDL_StopTextInput();
+            clearAlbumCover(game);
             return -1;
         }
 
@@ -687,6 +773,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
             for (const Button& button : genreButtons) {
                 if (!renderMenuLabelOnly(renderer, font, button, buttonTextColor)) {
                     SDL_StopTextInput();
+                    clearAlbumCover(game);
                     return -1;
                 }
             }
@@ -695,12 +782,14 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
                 !renderTextBlock(renderer, font, game.selectedGenre, textColor, padding, 120, width - (padding * 2)) ||
                 !renderTextBlock(renderer, font, "Click how the player should guess the song.", textColor, padding, 170, width - (padding * 2))) {
                 SDL_StopTextInput();
+                clearAlbumCover(game);
                 return -1;
             }
 
             for (const Button& button : modeButtons) {
                 if (!renderButton(renderer, font, button, {123, 63, 0, 220}, buttonTextColor)) {
                     SDL_StopTextInput();
+                    clearAlbumCover(game);
                     return -1;
                 }
             }
@@ -709,6 +798,7 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
             for (const string& message : game.messages) {
                 if (!renderTextBlock(renderer, font, message, textColor, padding, y, width - (padding * 2))) {
                     SDL_StopTextInput();
+                    clearAlbumCover(game);
                     return -1;
                 }
 
@@ -720,12 +810,14 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
             if (game.state == AppState::EnterGuess) {
                 if (!renderTextBlock(renderer, font, "> " + game.inputBuffer, inputColor, padding, height - 80, width - (padding * 2))) {
                     SDL_StopTextInput();
+                    clearAlbumCover(game);
                     return -1;
                 }
             } else if (game.state == AppState::AskReplay) {
                 for (const Button& button : replayButtons) {
                     if (!renderButton(renderer, font, button, {42, 92, 53, 220}, buttonTextColor)) {
                         SDL_StopTextInput();
+                        clearAlbumCover(game);
                         return -1;
                     }
                 }
@@ -737,5 +829,6 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     }
 
     SDL_StopTextInput();
+    clearAlbumCover(game);
     return 0;
 }
