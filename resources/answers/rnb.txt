@@ -24,7 +24,7 @@ can not right now..."; Kiss me thru the phone
 
 [melody]
 
-rnbmelody1.wav; Thiller
+rnbmelody1.wav; Thriller
 
 rnbmelody2.wav, Bad Guy
 
