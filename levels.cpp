@@ -14,6 +14,7 @@ using namespace std;
 namespace {
 const char* kAnswersDir = "resources/answers/";
 const char* kMusicDir = "resources/music/";
+const char* kImagesDir = "resources/images/";
 }
 
 Level::Level(string level)
@@ -21,10 +22,11 @@ Level::Level(string level)
     _level = level;
     _lyricIndex = 0;
     _rhythmIndex = 0;
-    _melodyIndex =0;
+    _melodyIndex = 0;
     _engineInitialized = false;
     _soundInitialized = false;
     _radioOn = false;
+    _currentAnswer = "";
 }
 
 Level::~Level()
@@ -44,6 +46,51 @@ string Level::getLevel()
 bool Level::isRadioOn() const
 {
     return _radioOn;
+}
+
+// Returns the cover BMP path for the current song answer.
+string Level::coverImagePath() const
+{
+    if (_currentAnswer.empty()) {
+        return "";
+    }
+
+    string name = _currentAnswer;
+    transform(name.begin(), name.end(), name.begin(), [](unsigned char ch) {
+        return static_cast<char>(tolower(ch));
+    });
+
+    // Replace spaces and non-alphanumeric chars (except underscores) with underscores
+    for (char& ch : name) {
+        if (!isalnum(static_cast<unsigned char>(ch)) && ch != '_') {
+            ch = '_';
+        }
+    }
+
+    // Collapse multiple consecutive underscores into one
+    string collapsed;
+    bool lastWasUnderscore = false;
+    for (char ch : name) {
+        if (ch == '_') {
+            if (!lastWasUnderscore) {
+                collapsed += ch;
+            }
+            lastWasUnderscore = true;
+        } else {
+            collapsed += ch;
+            lastWasUnderscore = false;
+        }
+    }
+
+    // Trim leading/trailing underscores
+    size_t start = collapsed.find_first_not_of('_');
+    size_t end = collapsed.find_last_not_of('_');
+    if (start == string::npos) {
+        return "";
+    }
+    collapsed = collapsed.substr(start, end - start + 1);
+
+    return string(kImagesDir) + collapsed + "_cover.bmp";
 }
 
 string Level::trim(string s)
@@ -266,6 +313,7 @@ int Level::lyrics(const string& genre, string& prompt, string& answer)
         _lyricIndex++;
         prompt = "Lyric: " + lyricsAndAnswers[index].first;
         answer = lyricsAndAnswers[index].second;
+        _currentAnswer = answer;  // track for coverImagePath
         return 0;
     }
 
@@ -286,6 +334,7 @@ int Level::lyrics(const string& genre, string& prompt, string& answer)
     _lyricIndex++;
     prompt = "Lyric: " + lyricsAndAnswers[index].first;
     answer = lyricsAndAnswers[index].second;
+    _currentAnswer = answer;  // track for coverImagePath
     return 0;
 }
 
@@ -306,6 +355,7 @@ int Level::playMusic(const string& mode, const string& genre, string& prompt, st
 
         const string fileName = musicFilePath(mode, genre, songs[index].first);
         answer = songs[index].second;
+        _currentAnswer = answer;  // track for coverImagePath
 
         stopAudio();
 
@@ -346,6 +396,7 @@ int Level::playMusic(const string& mode, const string& genre, string& prompt, st
 
     const string fileName = musicFilePath(mode, genre, songs[index].first);
     answer = songs[index].second;
+    _currentAnswer = answer;  // track for coverImagePath
 
     stopAudio();
 
