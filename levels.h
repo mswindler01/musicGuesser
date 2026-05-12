@@ -18,6 +18,7 @@ class Level
         bool _soundInitialized;
         bool _engineInitialized;
         bool _radioOn;
+        std::string _currentAnswer;
 
     protected:
         bool Digits(std::string s);
@@ -46,4 +47,8 @@ class Level
         int lyrics(const std::string& genre, std::string& prompt, std::string& answer);
         int playMusic(const std::string& mode, const std::string& genre, std::string& prompt, std::string& answer);
         void stopAudio();
+
+        // Returns the BMP path for the current song's album cover
+        std::string coverImagePath() const;
 };
+
