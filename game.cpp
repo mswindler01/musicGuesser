@@ -423,7 +423,7 @@ static vector<Button> buildGenreButtons(int width, int height)
     const int startY = (height / 2) - 80;
 
     const char* genreLabels[] = {"Christmas", "RNB", "Rock", "Quit"};
-    const char* genreValues[] = {"Christmas", "RNB", "Rock", "exit"};
+    const char* genreValues[] = {"Christmas", "RNB", "Rock", "Quit"};
 
     for (int index = 0; index < 4; ++index) {
         const int row = index / 2;
@@ -652,7 +652,7 @@ static void handleMenuClick(GameData& game, int mouseX, int mouseY, const vector
         }
 
         if (game.state == AppState::ChooseGenre) {
-            if (button.value == "exit") {
+            if (button.value == "Quit") {
                 game.quit = true;
             } else {
                 game.selectedGenre = button.value;
@@ -662,7 +662,7 @@ static void handleMenuClick(GameData& game, int mouseX, int mouseY, const vector
             beginRound(game, button.value);
         } else if (game.state == AppState::AskReplay) {
             if (button.value == "play-again") {
-                showGenreMenu(game);
+                showModeMenu(game);
             } else if (button.value == "main-menu") {
                 showGenreMenu(game);
             }
@@ -686,8 +686,6 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
     if (!artwork.setup(renderer, width, height)) {
         return -1;
     }
-
-    
 
     showGenreMenu(game);
 
@@ -778,14 +776,6 @@ int runGame(SDL_Renderer* renderer, TTF_Font* font, int width, int height)
                 }
             }
         } else if (game.state == AppState::ChooseMode) {
-            if (!renderTextBlock(renderer, font, "Genre Selected", headingColor, padding, 70, width - (padding * 2)) ||
-                !renderTextBlock(renderer, font, game.selectedGenre, textColor, padding, 120, width - (padding * 2)) ||
-                !renderTextBlock(renderer, font, "Click how the player should guess the song.", textColor, padding, 170, width - (padding * 2))) {
-                SDL_StopTextInput();
-                clearAlbumCover(game);
-                return -1;
-            }
-
             for (const Button& button : modeButtons) {
                 if (!renderButton(renderer, font, button, {123, 63, 0, 220}, buttonTextColor)) {
                     SDL_StopTextInput();
